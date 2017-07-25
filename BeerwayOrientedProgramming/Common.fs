@@ -6,7 +6,6 @@ module Error =
         | ScrapeError  of string
         | CompareError of string
         | AlertError   of string
-        | NoDifference
 
 module Compare =
 
@@ -51,10 +50,7 @@ module Compare =
             File.WriteAllText("TiredHands.json", serializeBeerInfo ( newBeerInfo ))
 
             let difference    = newBeersAsSet - oldBeersAsSet 
-            if difference = emptySet then 
-                Failure ( NoDifference )
-            else
-                Success ( difference )
+            Success ( difference )
         with
             | ex -> Failure ( CompareError( ex.Message ))
 
@@ -83,15 +79,17 @@ module Alert =
         "New beers available! Including: " + concatenatedBeers 
 
     let alert( difference : Set<string> ) = 
-        try 
-            TwilioClient.Init( AccountSid, AuthToken )
-            let toPhoneNumber   = PhoneNumber MyPhoneNumber
-            let sendPhoneNumber = PhoneNumber SendingPhoneNumberFromTwilio
-            let message = MessageResource.Create( toPhoneNumber, 
-                                                  null, 
-                                                  sendPhoneNumber, 
-                                                  null, 
-                                                  stringifyDifferenceSetWithDetails( difference ))
-            Success "New Message Sent Sucessfully"
-        with
-            | ex -> Failure ( AlertError ( ex.Message )) 
+        if difference.Count = 0 then Success "No Difference => No Text Sent"
+        else
+            try 
+                TwilioClient.Init( AccountSid, AuthToken )
+                let toPhoneNumber   = PhoneNumber MyPhoneNumber
+                let sendPhoneNumber = PhoneNumber SendingPhoneNumberFromTwilio
+                let message = MessageResource.Create( toPhoneNumber, 
+                                                      null, 
+                                                      sendPhoneNumber, 
+                                                      null, 
+                                                      stringifyDifferenceSetWithDetails( difference ))
+                Success "New Message Sent Sucessfully"
+            with
+                | ex -> Failure ( AlertError ( ex.Message )) 
