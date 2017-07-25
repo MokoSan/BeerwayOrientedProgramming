@@ -1,5 +1,4 @@
 Beerway Oriented Programming
 ============================
 
-Code related to the first blogpost
-
+Code related to the second blogpost
