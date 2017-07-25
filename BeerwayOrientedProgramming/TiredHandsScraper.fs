@@ -14,9 +14,6 @@ module TiredHandsScraper =
     [<Literal>]
     let ClassNameOfBeers = "menu-item-title"
 
-    [<Literal>]
-    let JsonFile = "TiredHandsScrape.json"
-
     type HtmlProviderForTiredHands = HtmlProvider< TiredHandsUrl >
     let html                       = HtmlProviderForTiredHands.Load( TiredHandsUrl )
 
@@ -38,6 +35,6 @@ module TiredHandsScraper =
     let scrape() =
         try
             let beers = getBeerNamesFromTiredHands()
-            Success { TimeOfScrape = System.DateTime.Now; Beers = beers }
+            Success { Name = "TiredHands"; TimeOfScrape = System.DateTime.Now; Beers = beers }
         with
             | ex -> Failure ( ScrapeError ( ex.Message )) 

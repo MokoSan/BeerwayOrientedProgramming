@@ -5,12 +5,15 @@ open System
 open Chiron
 open Chiron.Operators
 
-type BeerInfo = { TimeOfScrape : DateTime; Beers : string list } with
+type BeerInfo = { Name : string; TimeOfScrape : DateTime; Beers : string list } with
     static member ToJson( beerInfo : BeerInfo ) =
-        Json.write "TimeOfScrape" beerInfo.TimeOfScrape
+        Json.write "Name" beerInfo.Name
+        *> Json.write "TimeOfScrape" beerInfo.TimeOfScrape
         *> Json.write "Beers" beerInfo.Beers
 
     static member FromJson( _ : BeerInfo ) =
-        fun timeOfScrape beers -> { TimeOfScrape = timeOfScrape; Beers = beers }
-        <!> Json.read "TimeOfScrape" 
+        fun name timeOfScrape beers 
+            -> { Name = name; TimeOfScrape = timeOfScrape; Beers = beers }
+        <!> Json.read "Name" 
+        <*> Json.read "TimeOfScrape"
         <*> Json.read "Beers"
