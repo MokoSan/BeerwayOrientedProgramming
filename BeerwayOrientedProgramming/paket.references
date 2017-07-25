@@ -3,3 +3,6 @@ Chiron
 FSharp.Data
 logary
 Twilio
+mongocsharpdriver
+MongoDB.FSharp
+Quartz

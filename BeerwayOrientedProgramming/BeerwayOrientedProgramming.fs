@@ -4,13 +4,31 @@ module BeerwayOrientedProgramming =
 
     open ROP
 
-    open TiredHandsScraper
     open Compare
     open Alert
 
-    let pipeline = scrape >=> compare >=> alert 
+    open Quartz
+    open Quartz.Impl
+
+    let tiredHandsPipeline = TiredHandsScraper.scrape >=> compare >=> alert 
+    let breweryPipelines = [ tiredHandsPipeline ]
+
+    type Job () =
+        interface IJob with
+            member x.Execute(context: IJobExecutionContext) =
+                breweryPipelines
+                |> List.iter(fun b -> printfn "%A" ( b() )) 
 
     [<EntryPoint>]
     let main argv =
-        printfn "%A" ( pipeline() )
-        0 // return an integer exit code
+        let schedulerFactory = StdSchedulerFactory()
+        let scheduler = schedulerFactory.GetScheduler()
+        let job = JobBuilder.Create<Job>().Build()
+        let trigger =
+            TriggerBuilder.Create()
+                .WithSimpleSchedule(fun x ->
+                    x.WithIntervalInSeconds(2400).RepeatForever() |> ignore)
+                .Build()
+        scheduler.Start()
+        scheduler.ScheduleJob(job, trigger) |> ignore
+        0

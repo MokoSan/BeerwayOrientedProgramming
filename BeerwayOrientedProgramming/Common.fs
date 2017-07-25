@@ -1,5 +1,35 @@
 namespace BeerwayOrientedProgramming
 
+module Db = 
+
+    open System.Linq
+
+    open MongoDB.Bson
+    open MongoDB.Driver
+    open MongoDB.FSharp
+
+    type Configuration = { Id                 : BsonObjectId; 
+                           MyPhoneNumber      : string; 
+                           AccountSID         : string; 
+                           AuthToken          : string; 
+                           SendingPhoneNumber : string }
+
+    [<Literal>]
+    let ConnectionString = "mongodb://moko:1600110099@ds115583.mlab.com:15583/beerwayorientedprogramming" 
+
+    [<Literal>]
+    let DbName = "beerwayorientedprogramming"
+
+    [<Literal>]
+    let ConfigurationCollection = "configuration"
+
+    let configuration = 
+        let client = MongoClient(ConnectionString)
+        let db     = client.GetDatabase(DbName)
+        let configurationCollection = 
+            db.GetCollection<Configuration>(ConfigurationCollection)
+        configurationCollection.Find(Builders.Filter.Empty).ToList().First()
+
 module Error =
 
     type Error = 
@@ -40,14 +70,15 @@ module Compare =
 
     let compare( newBeerInfo : BeerInfo ) = 
         try
-            let deserializedBeers = deserializePreviousScrape("TiredHands.json")
+            let breweryFile = newBeerInfo.Name + ".json"    
+            let deserializedBeers = deserializePreviousScrape(breweryFile)
             let oldBeersAsSet = 
                 if deserializedBeers.IsSome then Set< string >( deserializedBeers.Value.Beers )
                 else emptySet
 
             let newBeersAsSet = Set< string >( newBeerInfo.Beers )
 
-            File.WriteAllText("TiredHands.json", serializeBeerInfo ( newBeerInfo ))
+            File.WriteAllText(breweryFile, serializeBeerInfo ( newBeerInfo ))
 
             let difference    = newBeersAsSet - oldBeersAsSet 
             Success ( difference )
@@ -62,15 +93,7 @@ module Alert =
 
     open Error
     open ROP
-
-    [<Literal>]
-    let MyPhoneNumber = ""
-    [<Literal>]
-    let AccountSid = ""
-    [<Literal>]
-    let AuthToken = ""
-    [<Literal>]
-    let SendingPhoneNumberFromTwilio = ""
+    open Db
 
     let stringifyDifferenceSetWithDetails ( difference : Set<string> ) : string =
         let concatenatedBeers = 
@@ -82,14 +105,15 @@ module Alert =
         if difference.Count = 0 then Success "No Difference => No Text Sent"
         else
             try 
-                TwilioClient.Init( AccountSid, AuthToken )
-                let toPhoneNumber   = PhoneNumber MyPhoneNumber
-                let sendPhoneNumber = PhoneNumber SendingPhoneNumberFromTwilio
+                TwilioClient.Init( configuration.AccountSID, configuration.AuthToken )
+                let toPhoneNumber   = PhoneNumber configuration.MyPhoneNumber
+                let sendPhoneNumber = PhoneNumber configuration.SendingPhoneNumber
                 let message = MessageResource.Create( toPhoneNumber, 
                                                       null, 
                                                       sendPhoneNumber, 
                                                       null, 
-                                                      stringifyDifferenceSetWithDetails( difference ))
+                                                      stringifyDifferenceSetWithDetails
+                                                        ( difference ))
                 Success "New Message Sent Sucessfully"
             with
                 | ex -> Failure ( AlertError ( ex.Message )) 

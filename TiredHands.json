@@ -2,15 +2,16 @@
   "Beers": [
     "HopHands ",
     "SaisonHands ",
-    "Wish Fulfillment ",
-    "Alien Church ",
-    "Progression Through Unlearning II ",
-    "Aloha Ra ",
+    "Pineal ",
+    "Trendler Schwarzbier ",
+    "When You Die Your Energy Will Become… ",
     "Trendler Pilsner ",
-    "Ridiculoid ",
     "Elaborate Expectations ",
-    "Gatherer 2017 ",
+    "Refreshing Double IPA ",
+    "Ridiculoid ",
     "Forced Harmony ",
+    "Science Experiment VI ",
+    "Tabel Bier ",
     "Awake Minds Coffee ",
     "Iced Darjeeling Tea",
     "PopHands Soda Pop",
@@ -20,8 +21,9 @@
     "Eyes Closed & Open",
     "Undertow",
     "Hysterical Obelisk",
-    "Obliterative",
-    "Heavy Gem Virga"
+    "Heavy Gem Virga",
+    "Singing Swans"
   ],
-  "TimeOfScrape": "2017-07-15T14:14:14.9763220Z"
+  "Name": "TiredHands",
+  "TimeOfScrape": "2017-07-25T22:54:36.6569730Z"
 }

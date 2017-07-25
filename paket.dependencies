@@ -4,4 +4,7 @@ nuget FAKE
 nuget FSharp.Core
 nuget FSharp.Data
 nuget logary
+nuget mongocsharpdriver
+nuget MongoDB.FSharp
+nuget Quartz
 nuget Twilio
