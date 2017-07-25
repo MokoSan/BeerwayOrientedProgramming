@@ -15,7 +15,7 @@ module Db =
                            SendingPhoneNumber : string }
 
     [<Literal>]
-    let ConnectionString = "mongodb://moko:1600110099@ds115583.mlab.com:15583/beerwayorientedprogramming" 
+    let ConnectionString = "your connection string goes here." 
 
     [<Literal>]
     let DbName = "beerwayorientedprogramming"
