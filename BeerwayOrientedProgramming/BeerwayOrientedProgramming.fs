@@ -27,7 +27,7 @@ module BeerwayOrientedProgramming =
         let trigger =
             TriggerBuilder.Create()
                 .WithSimpleSchedule(fun x ->
-                    x.WithIntervalInSeconds(2400).RepeatForever() |> ignore)
+                    x.WithIntervalInSeconds(60).RepeatForever() |> ignore)
                 .Build()
         scheduler.Start()
         scheduler.ScheduleJob(job, trigger) |> ignore

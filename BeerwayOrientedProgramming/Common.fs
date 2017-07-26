@@ -6,7 +6,10 @@ module Db =
 
     open MongoDB.Bson
     open MongoDB.Driver
+    open MongoDB.Driver.Builders
     open MongoDB.FSharp
+
+    open BeerInfo
 
     type Configuration = { Id                 : BsonObjectId; 
                            MyPhoneNumber      : string; 
@@ -15,20 +18,46 @@ module Db =
                            SendingPhoneNumber : string }
 
     [<Literal>]
-    let ConnectionString = "your connection string goes here." 
+    let ConnectionString = "your connection string goes here."
 
     [<Literal>]
     let DbName = "beerwayorientedprogramming"
 
     [<Literal>]
-    let ConfigurationCollection = "configuration"
+    let ConfigurationCollection = "configurations"
+
+    let client = MongoClient(ConnectionString)
+    let db     = client.GetDatabase(DbName)
+
+    let generateBsonId() =
+        BsonObjectId(ObjectId.GenerateNewId())
 
     let configuration = 
-        let client = MongoClient(ConnectionString)
-        let db     = client.GetDatabase(DbName)
         let configurationCollection = 
             db.GetCollection<Configuration>(ConfigurationCollection)
         configurationCollection.Find(Builders.Filter.Empty).ToList().First()
+
+    let getScrapeCollection ( breweryName : string ) =
+        try
+            db.GetCollection<BeerInfo>(breweryName)
+        with
+            | ex -> 
+                db.CreateCollection(breweryName)
+                db.GetCollection<BeerInfo>(breweryName)
+
+    let getPreviousScrapeAndPersistNewBeerInfo ( newBeerInfo : BeerInfo ) 
+        : BeerInfo option = 
+        let breweryCollection = getScrapeCollection newBeerInfo.Name
+
+        let previousScrape = 
+            let result = 
+                breweryCollection.Find(Builders.Filter.Empty)
+                    .SortByDescending(fun b -> (b.TimeOfScrape :> obj))
+                    .FirstOrDefault()
+            if isNull ( result :> obj ) then None
+            else Some result
+        breweryCollection.InsertOne( newBeerInfo )
+        previousScrape
 
 module Error =
 
@@ -39,47 +68,23 @@ module Error =
 
 module Compare =
 
-    open System.IO
-
-    open Chiron
-    open Chiron.Operators
-
     open Error
     open BeerInfo
     open ROP
-
-    let serializeBeerInfo ( beerInfo : BeerInfo ) : string = 
-        beerInfo 
-        |> Json.serialize
-        |> Json.formatWith JsonFormattingOptions.Pretty
-        
-    let deserializeBeerInfo ( jsonizedBeerInfo : string ) : BeerInfo = 
-        jsonizedBeerInfo 
-        |> Json.parse
-        |> Json.deserialize
-
-    let deserializePreviousScrape( filePath : string ) : BeerInfo option = 
-        if File.Exists ( filePath ) then
-            File.ReadAllText ( filePath )
-            |> deserializeBeerInfo
-            |> Some
-        else
-            None
+    open Db 
 
     let emptySet = Set.empty
 
     let compare( newBeerInfo : BeerInfo ) = 
         try
-            let breweryFile = newBeerInfo.Name + ".json"    
-            let deserializedBeers = deserializePreviousScrape(breweryFile)
+            let deserializedBeers = 
+                Db.getPreviousScrapeAndPersistNewBeerInfo( newBeerInfo )
             let oldBeersAsSet = 
-                if deserializedBeers.IsSome then Set< string >( deserializedBeers.Value.Beers )
+                if deserializedBeers.IsSome then 
+                    Set< string >( deserializedBeers.Value.Beers )
                 else emptySet
 
             let newBeersAsSet = Set< string >( newBeerInfo.Beers )
-
-            File.WriteAllText(breweryFile, serializeBeerInfo ( newBeerInfo ))
-
             let difference    = newBeersAsSet - oldBeersAsSet 
             Success ( difference )
         with
